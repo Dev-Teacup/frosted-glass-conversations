@@ -75,7 +75,18 @@ export const useChats = () => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data || []);
+      
+      // Type the data correctly from the database
+      const typedMessages: Message[] = (data || []).map(msg => ({
+        id: msg.id,
+        chat_id: msg.chat_id,
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+        model: msg.model,
+        created_at: msg.created_at
+      }));
+      
+      setMessages(typedMessages);
     } catch (error: any) {
       toast.error('Failed to load messages');
       console.error('Error loading messages:', error);
@@ -155,7 +166,17 @@ export const useChats = () => {
 
       if (error) throw error;
       
-      setMessages(prev => [...prev, data]);
+      // Type the response correctly
+      const typedMessage: Message = {
+        id: data.id,
+        chat_id: data.chat_id,
+        role: data.role as 'user' | 'assistant',
+        content: data.content,
+        model: data.model,
+        created_at: data.created_at
+      };
+      
+      setMessages(prev => [...prev, typedMessage]);
       
       // Update chat's updated_at timestamp
       await supabase
@@ -163,7 +184,7 @@ export const useChats = () => {
         .update({ updated_at: new Date().toISOString() })
         .eq('id', chatId);
       
-      return data;
+      return typedMessage;
     } catch (error: any) {
       toast.error('Failed to save message');
       console.error('Error adding message:', error);

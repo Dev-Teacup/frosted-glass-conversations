@@ -20,9 +20,7 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
   const [selectedModel, setSelectedModel] = useState('gpt-3.5-turbo');
   const [isTyping, setIsTyping] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const messagesEndRef = use
-
-Ref<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
