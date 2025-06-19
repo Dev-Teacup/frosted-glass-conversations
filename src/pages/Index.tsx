@@ -2,8 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import ChatInterface from '@/components/ChatInterface';
 import Sidebar from '@/components/Sidebar';
+import AuthPage from '@/components/AuthPage';
+import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
+  const { user, loading } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -24,6 +27,21 @@ const Index = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  // Show loading spinner while checking auth state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
+  // Show auth page if user is not logged in
+  if (!user) {
+    return <AuthPage />;
+  }
+
+  // Show main app if user is logged in
   return (
     <div className="min-h-screen flex w-full relative">
       {/* Animated Background Elements */}

@@ -3,13 +3,8 @@ import React, { useState } from 'react';
 import { Plus, MessageSquare, Trash2, Edit3, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
-interface Chat {
-  id: string;
-  title: string;
-  lastMessage: string;
-  timestamp: Date;
-}
+import { useChats } from '@/hooks/useChats';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -17,42 +12,28 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
-  const [chats, setChats] = useState<Chat[]>([
-    {
-      id: '1',
-      title: 'Welcome Chat',
-      lastMessage: 'Hello! I\'m your AI assistant...',
-      timestamp: new Date(),
-    },
-    {
-      id: '2',
-      title: 'Previous Conversation',
-      lastMessage: 'That was a great discussion about...',
-      timestamp: new Date(Date.now() - 86400000),
-    },
-  ]);
-
+  const { user } = useAuth();
+  const { chats, currentChatId, setCurrentChatId, createChat, updateChat, deleteChat } = useChats();
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const handleNewChat = () => {
-    const newChat: Chat = {
-      id: Date.now().toString(),
-      title: 'New Chat',
-      lastMessage: 'Start a new conversation...',
-      timestamp: new Date(),
-    };
-    setChats(prev => [newChat, ...prev]);
+  const handleNewChat = async () => {
+    if (!user) return;
+    await createChat();
   };
 
-  const handleDeleteChat = (id: string) => {
-    setChats(prev => prev.filter(chat => chat.id !== id));
+  const handleDeleteChat = async (id: string) => {
+    await deleteChat(id);
   };
 
-  const handleRenameChat = (id: string, newTitle: string) => {
-    setChats(prev => prev.map(chat => 
-      chat.id === id ? { ...chat, title: newTitle } : chat
-    ));
+  const handleRenameChat = async (id: string, newTitle: string) => {
+    if (newTitle.trim()) {
+      await updateChat(id, { title: newTitle.trim() });
+    }
     setEditingId(null);
+  };
+
+  const handleChatClick = (chatId: string) => {
+    setCurrentChatId(chatId);
   };
 
   return (
@@ -102,7 +83,10 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
               {chats.map((chat) => (
                 <div
                   key={chat.id}
-                  className="group glass-input hover:bg-white/10 p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02]"
+                  className={`group glass-input hover:bg-white/10 p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02] ${
+                    currentChatId === chat.id ? 'bg-white/10 border-purple-500/50' : ''
+                  }`}
+                  onClick={() => handleChatClick(chat.id)}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
@@ -118,23 +102,24 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                               handleRenameChat(chat.id, (e.target as HTMLInputElement).value);
                             }
                           }}
+                          onClick={(e) => e.stopPropagation()}
                         />
                       ) : (
                         <h3 className="text-sm font-medium truncate">
                           {chat.title}
                         </h3>
                       )}
-                      <p className="text-xs text-muted-foreground truncate mt-1">
-                        {chat.lastMessage}
-                      </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {chat.timestamp.toLocaleDateString()}
+                        {new Date(chat.updated_at).toLocaleDateString()}
                       </p>
                     </div>
                     
                     <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
-                        onClick={() => setEditingId(chat.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingId(chat.id);
+                        }}
                         className="w-6 h-6 p-0 hover:bg-white/10"
                         size="sm"
                         variant="ghost"
@@ -142,7 +127,10 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                         <Edit3 className="w-3 h-3" />
                       </Button>
                       <Button
-                        onClick={() => handleDeleteChat(chat.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteChat(chat.id);
+                        }}
                         className="w-6 h-6 p-0 hover:bg-red-500/20 hover:text-red-400"
                         size="sm"
                         variant="ghost"
@@ -153,6 +141,14 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   </div>
                 </div>
               ))}
+              
+              {chats.length === 0 && (
+                <div className="text-center text-muted-foreground py-8">
+                  <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>No conversations yet</p>
+                  <p className="text-xs">Start a new chat to begin</p>
+                </div>
+              )}
             </div>
           </ScrollArea>
 
