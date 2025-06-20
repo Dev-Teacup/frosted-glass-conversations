@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Settings, Moon, Sun, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import SettingsModal from './SettingsModal';
+import MessageRenderer from './MessageRenderer';
 
 interface ChatInterfaceProps {
   isDarkMode: boolean;
@@ -337,9 +337,13 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
                   <div className={`max-w-[85%] sm:max-w-3xl p-3 sm:p-4 ${
                     message.isUser ? 'message-bubble-user' : 'message-bubble-ai'
                   }`}>
-                    <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
-                      {message.content}
-                    </p>
+                    <div className="text-xs sm:text-sm leading-relaxed">
+                      {message.isUser ? (
+                        <span className="whitespace-pre-wrap">{message.content}</span>
+                      ) : (
+                        <MessageRenderer content={message.content} isDarkMode={isDarkMode} />
+                      )}
+                    </div>
                     <div className="flex items-center justify-between mt-2">
                       <p className="text-xs text-muted-foreground">
                         {message.timestamp.toLocaleTimeString()}
@@ -362,10 +366,10 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
                   <div className="message-bubble-ai p-3 sm:p-4 max-w-[85%] sm:max-w-3xl">
                     {streamingMessage ? (
                       <>
-                        <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
-                          {streamingMessage}
+                        <div className="text-xs sm:text-sm leading-relaxed">
+                          <MessageRenderer content={streamingMessage} isDarkMode={isDarkMode} />
                           <span className="inline-block w-2 h-4 sm:h-5 bg-purple-500 ml-1 animate-pulse"></span>
-                        </p>
+                        </div>
                         <div className="flex justify-between items-center mt-2">
                           <p className="text-xs text-muted-foreground">Streaming...</p>
                           <Button
