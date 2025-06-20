@@ -6,6 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useChats } from '@/hooks/useChats';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import SettingsModal from './SettingsModal';
 
 interface ChatInterfaceProps {
@@ -13,11 +15,18 @@ interface ChatInterfaceProps {
   onToggleTheme: () => void;
 }
 
+const AI_MODELS = [
+  { value: 'openai/gpt-3.5-turbo', label: 'GPT-3.5 Turbo', description: 'Fast and efficient' },
+  { value: 'openai/gpt-4o', label: 'GPT-4o', description: 'Most capable' },
+  { value: 'deepseek/deepseek-chat', label: 'DeepSeek Chat', description: 'Alternative AI model' },
+  { value: 'anthropic/claude-3-sonnet-20240229', label: 'Claude 3 Sonnet', description: 'High-quality responses' }
+];
+
 export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfaceProps) {
   const { user } = useAuth();
-  const { messages, currentChatId, createChat, addMessage, loading } = useChats();
+  const { messages, currentChatId, createChat, addMessage, loading, updateChat } = useChats();
   const [inputMessage, setInputMessage] = useState('');
-  const [selectedModel, setSelectedModel] = useState('gpt-3.5-turbo');
+  const [selectedModel, setSelectedModel] = useState('openai/gpt-3.5-turbo');
   const [isTyping, setIsTyping] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -31,30 +40,98 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !user) return;
+  const generateChatTitle = async (firstMessage: string): Promise<string> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('chat-with-ai', {
+        body: {
+          message: `Generate a short, descriptive title (max 5 words) for a conversation that starts with: "${firstMessage}". Only return the title, nothing else.`,
+          model: 'openai/gpt-3.5-turbo'
+        }
+      });
 
-    let chatId = currentChatId;
-    
-    // Create new chat if none exists
-    if (!chatId) {
-      const newChat = await createChat('New Chat');
-      if (!newChat) return;
-      chatId = newChat.id;
+      if (error) throw error;
+      return data.response?.trim() || 'New Chat';
+    } catch (error) {
+      console.error('Error generating chat title:', error);
+      return 'New Chat';
     }
+  };
 
-    // Add user message
-    await addMessage(chatId, 'user', inputMessage);
-    const userMessage = inputMessage;
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || !user || isTyping) return;
+
+    const userMessage = inputMessage.trim();
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate AI response (replace with real API call later)
-    setTimeout(async () => {
-      const aiResponse = `I understand you said: "${userMessage}". This is a demo response from ${selectedModel}. In a real implementation, this would connect to the OpenRouter API.`;
-      await addMessage(chatId!, 'assistant', aiResponse, selectedModel);
+    let chatId = currentChatId;
+    let isNewChat = false;
+    
+    try {
+      // Create new chat if none exists
+      if (!chatId) {
+        const newChat = await createChat('New Chat');
+        if (!newChat) {
+          toast.error('Failed to create new chat');
+          return;
+        }
+        chatId = newChat.id;
+        isNewChat = true;
+      }
+
+      // Add user message
+      await addMessage(chatId, 'user', userMessage);
+
+      // Prepare conversation history for context
+      const conversationHistory = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      // Call OpenRouter API through edge function
+      const { data, error } = await supabase.functions.invoke('chat-with-ai', {
+        body: {
+          message: userMessage,
+          model: selectedModel,
+          conversationHistory: conversationHistory
+        }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to get AI response');
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Add AI response
+      await addMessage(chatId, 'assistant', data.response, selectedModel);
+
+      // Generate and update chat title for new chats
+      if (isNewChat) {
+        try {
+          const title = await generateChatTitle(userMessage);
+          await updateChat(chatId, { title });
+        } catch (titleError) {
+          console.error('Failed to generate chat title:', titleError);
+        }
+      }
+
+      toast.success('Message sent successfully');
+
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      toast.error(error.message || 'Failed to send message');
+      
+      // Add error message to chat if chat exists
+      if (chatId) {
+        await addMessage(chatId, 'assistant', 'Sorry, I encountered an error processing your request. Please try again.', selectedModel);
+      }
+    } finally {
       setIsTyping(false);
-    }, 2000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -70,6 +147,7 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
     content: msg.content,
     isUser: msg.role === 'user',
     timestamp: new Date(msg.created_at),
+    model: msg.model
   }));
 
   return (
@@ -88,9 +166,14 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="glass-panel border-white/20">
-              <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
-              <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-              <SelectItem value="deepseek-chat">DeepSeek Chat</SelectItem>
+              {AI_MODELS.map((model) => (
+                <SelectItem key={model.value} value={model.value}>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{model.label}</span>
+                    <span className="text-xs text-muted-foreground">{model.description}</span>
+                  </div>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -129,6 +212,7 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
                   <Bot className="w-16 h-16 mx-auto mb-4 opacity-50" />
                   <h3 className="text-lg font-medium mb-2">Welcome to AI Chat!</h3>
                   <p>Start a conversation by typing a message below.</p>
+                  <p className="text-sm mt-2">Powered by OpenRouter with {AI_MODELS.find(m => m.value === selectedModel)?.label}</p>
                 </div>
               )}
               
@@ -159,9 +243,16 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">
                       {message.content}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {message.timestamp.toLocaleTimeString()}
-                    </p>
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        {message.timestamp.toLocaleTimeString()}
+                      </p>
+                      {!message.isUser && message.model && (
+                        <p className="text-xs text-muted-foreground">
+                          {AI_MODELS.find(m => m.value === message.model)?.label || message.model}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -203,6 +294,7 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
                   minHeight: '44px',
                   maxHeight: '120px',
                 }}
+                disabled={isTyping}
               />
             </div>
             <Button
