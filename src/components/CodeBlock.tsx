@@ -1,7 +1,5 @@
 
 import React, { useState } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -47,19 +45,9 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ code, language, isDarkMode = true
           )}
         </Button>
       </div>
-      <SyntaxHighlighter
-        language={language}
-        style={oneDark}
-        customStyle={{
-          margin: 0,
-          borderTopLeftRadius: 0,
-          borderTopRightRadius: 0,
-          borderBottomLeftRadius: '0.5rem',
-          borderBottomRightRadius: '0.5rem',
-        }}
-      >
-        {code}
-      </SyntaxHighlighter>
+      <pre className="bg-gray-900 text-gray-100 p-4 rounded-b-lg overflow-x-auto text-sm leading-relaxed">
+        <code className="font-mono">{code}</code>
+      </pre>
     </div>
   );
 };
