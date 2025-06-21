@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, model, conversationHistory, stream = true } = await req.json();
+    const { message, model, conversationHistory } = await req.json();
     
     if (!message) {
       throw new Error('Message is required');
@@ -25,7 +25,7 @@ serve(async (req) => {
       throw new Error('OpenRouter API key not configured');
     }
 
-    console.log(`Processing chat request with model: ${model}, streaming: ${stream}`);
+    console.log(`Processing chat request with model: ${model}`);
 
     // Prepare messages array with conversation history
     const messages = [
@@ -40,7 +40,7 @@ serve(async (req) => {
       }
     ];
 
-    // Make request to OpenRouter API
+    // Make request to OpenRouter API (non-streaming)
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -54,7 +54,7 @@ serve(async (req) => {
         messages: messages,
         temperature: 0.7,
         max_tokens: 2000,
-        stream: stream
+        stream: false
       })
     });
 
@@ -64,112 +64,22 @@ serve(async (req) => {
       throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
     }
 
-    if (stream) {
-      // Handle streaming response
-      const headers = {
-        ...corsHeaders,
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      };
+    const data = await response.json();
+    console.log('OpenRouter response received');
 
-      const stream = new ReadableStream({
-        async start(controller) {
-          const reader = response.body?.getReader();
-          if (!reader) {
-            console.error('No reader available for streaming response');
-            controller.enqueue(`data: ${JSON.stringify({ type: 'error', error: 'No reader available' })}\n\n`);
-            controller.close();
-            return;
-          }
-
-          try {
-            let buffer = '';
-            console.log('Starting to read streaming response...');
-            
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) {
-                console.log('Stream reading completed');
-                break;
-              }
-
-              buffer += new TextDecoder().decode(value);
-              const lines = buffer.split('\n');
-              buffer = lines.pop() || '';
-
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  const data = line.slice(6).trim();
-                  if (data === '[DONE]') {
-                    console.log('Received [DONE] signal, ending stream');
-                    try {
-                      controller.enqueue(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
-                    } catch (e) {
-                      console.log('Controller already closed, ignoring done signal');
-                    }
-                    return;
-                  }
-                  
-                  try {
-                    const parsed = JSON.parse(data);
-                    if (parsed.choices?.[0]?.delta?.content) {
-                      const content = parsed.choices[0].delta.content;
-                      console.log('Streaming content chunk:', content.length, 'chars');
-                      try {
-                        controller.enqueue(`data: ${JSON.stringify({ 
-                          type: 'content',
-                          content: content,
-                          model: model || 'openai/gpt-3.5-turbo'
-                        })}\n\n`);
-                      } catch (e) {
-                        console.log('Controller closed, stopping stream');
-                        return;
-                      }
-                    }
-                  } catch (e) {
-                    console.log('Skipping invalid JSON line:', data.substring(0, 100));
-                  }
-                }
-              }
-            }
-          } catch (error) {
-            console.error('Streaming error:', error);
-            try {
-              controller.enqueue(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
-            } catch (e) {
-              console.log('Controller already closed, cannot send error');
-            }
-          } finally {
-            try {
-              controller.close();
-            } catch (e) {
-              console.log('Controller already closed');
-            }
-          }
-        }
-      });
-
-      return new Response(stream, { headers });
-    } else {
-      // Handle non-streaming response
-      const data = await response.json();
-      console.log('OpenRouter response received');
-
-      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-        throw new Error('Invalid response from OpenRouter API');
-      }
-
-      const aiResponse = data.choices[0].message.content;
-
-      return new Response(JSON.stringify({ 
-        response: aiResponse,
-        model: model || 'openai/gpt-3.5-turbo',
-        usage: data.usage
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid response from OpenRouter API');
     }
+
+    const aiResponse = data.choices[0].message.content;
+
+    return new Response(JSON.stringify({ 
+      response: aiResponse,
+      model: model || 'openai/gpt-3.5-turbo',
+      usage: data.usage
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
     console.error('Error in chat-with-ai function:', error);

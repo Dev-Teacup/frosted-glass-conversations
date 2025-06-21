@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Settings, Moon, Sun, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,12 +29,10 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
   const [inputMessage, setInputMessage] = useState('');
   const [selectedModel, setSelectedModel] = useState('openai/gpt-3.5-turbo');
   const [isTyping, setIsTyping] = useState(false);
-  const [streamingMessage, setStreamingMessage] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -41,15 +40,14 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, streamingMessage]);
+  }, [messages]);
 
   const generateChatTitle = async (firstMessage: string): Promise<string> => {
     try {
       const { data, error } = await supabase.functions.invoke('chat-with-ai', {
         body: {
           message: `Generate a short, descriptive title (max 5 words) for a conversation that starts with: "${firstMessage}". Only return the title, nothing else.`,
-          model: 'openai/gpt-3.5-turbo',
-          stream: false
+          model: 'openai/gpt-3.5-turbo'
         }
       });
 
@@ -67,10 +65,6 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
     const userMessage = inputMessage.trim();
     setInputMessage('');
     setIsTyping(true);
-    setStreamingMessage('');
-
-    // Create abort controller for this request
-    abortControllerRef.current = new AbortController();
 
     let chatId = currentChatId;
     let isNewChat = false;
@@ -100,9 +94,9 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
         content: msg.content
       }));
 
-      console.log('Calling AI API with streaming...');
+      console.log('Calling AI API...');
       
-      // Call OpenRouter API through edge function with streaming
+      // Call OpenRouter API through edge function (non-streaming)
       const response = await fetch(`https://mtfifrwifpgegfynsgvp.functions.supabase.co/chat-with-ai`, {
         method: 'POST',
         headers: {
@@ -111,79 +105,26 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
         body: JSON.stringify({
           message: userMessage,
           model: selectedModel,
-          conversationHistory: conversationHistory,
-          stream: true
-        }),
-        signal: abortControllerRef.current.signal
+          conversationHistory: conversationHistory
+        })
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      console.log('Response received, starting to read stream...');
+      const data = await response.json();
       
-      if (!response.body) {
-        throw new Error('No response body available');
+      if (data.error) {
+        throw new Error(data.error);
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = '';
-      let buffer = '';
-      
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            console.log('Stream reading completed');
-            break;
-          }
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          
-          // Keep the last incomplete line in the buffer
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6).trim();
-              
-              if (data === '[DONE]') {
-                console.log('Received [DONE] signal, ending stream');
-                break;
-              }
-              
-              if (data) {
-                try {
-                  const parsed = JSON.parse(data);
-                  console.log('Parsed streaming data:', parsed.type);
-                  
-                  if (parsed.type === 'content') {
-                    fullResponse += parsed.content;
-                    setStreamingMessage(fullResponse);
-                  } else if (parsed.type === 'done') {
-                    console.log('Received done signal');
-                    break;
-                  } else if (parsed.type === 'error') {
-                    throw new Error(parsed.error);
-                  }
-                } catch (e) {
-                  console.log('Skipping invalid JSON:', data.substring(0, 50));
-                }
-              }
-            }
-          }
-        }
-      } finally {
-        reader.releaseLock();
-      }
+      const aiResponse = data.response;
 
       // Add AI response to database
-      if (fullResponse) {
+      if (aiResponse) {
         console.log('Adding AI response to database...');
-        await addMessage(chatId, 'assistant', fullResponse, selectedModel);
+        await addMessage(chatId, 'assistant', aiResponse, selectedModel);
       }
 
       // Generate and update chat title for new chats
@@ -200,11 +141,6 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
       console.log('Message processing completed successfully');
 
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        console.log('Request was aborted');
-        return;
-      }
-      
       console.error('Error sending message:', error);
       toast.error(error.message || 'Failed to send message');
       
@@ -214,8 +150,6 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
       }
     } finally {
       setIsTyping(false);
-      setStreamingMessage('');
-      abortControllerRef.current = null;
     }
   };
 
@@ -223,12 +157,6 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
-    }
-  };
-
-  const stopGeneration = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
     }
   };
 
@@ -384,37 +312,17 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
                 </div>
               ))}
               
-              {(isTyping || streamingMessage) && (
+              {isTyping && (
                 <div className="flex items-start space-x-2 sm:space-x-3 slide-in-left">
                   <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-500 to-cyan-500">
                     <Bot className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                   </div>
                   <div className="message-bubble-ai p-3 sm:p-4 max-w-[85%] sm:max-w-3xl">
-                    {streamingMessage ? (
-                      <>
-                        <div className="text-xs sm:text-sm leading-relaxed">
-                          <MessageRenderer content={streamingMessage} isDarkMode={isDarkMode} />
-                          <span className="inline-block w-2 h-4 sm:h-5 bg-purple-500 ml-1 animate-pulse"></span>
-                        </div>
-                        <div className="flex justify-between items-center mt-2">
-                          <p className="text-xs text-muted-foreground">Streaming...</p>
-                          <Button
-                            onClick={stopGeneration}
-                            size="sm"
-                            variant="ghost"
-                            className="text-xs h-6 px-2"
-                          >
-                            Stop
-                          </Button>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full typing-indicator"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full typing-indicator" style={{ animationDelay: '0.2s' }}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full typing-indicator" style={{ animationDelay: '0.4s' }}></div>
-                      </div>
-                    )}
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full typing-indicator"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full typing-indicator" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full typing-indicator" style={{ animationDelay: '0.4s' }}></div>
+                    </div>
                   </div>
                 </div>
               )}
