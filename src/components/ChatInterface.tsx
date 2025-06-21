@@ -76,8 +76,11 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
     let isNewChat = false;
     
     try {
+      console.log('Starting message send process...');
+      
       // Create new chat if none exists
       if (!chatId) {
+        console.log('Creating new chat...');
         const newChat = await createChat('New Chat');
         if (!newChat) {
           toast.error('Failed to create new chat');
@@ -88,6 +91,7 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
       }
 
       // Add user message
+      console.log('Adding user message to database...');
       await addMessage(chatId, 'user', userMessage);
 
       // Prepare conversation history for context
@@ -96,6 +100,8 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
         content: msg.content
       }));
 
+      console.log('Calling AI API with streaming...');
+      
       // Call OpenRouter API through edge function with streaming
       const response = await fetch(`https://mtfifrwifpgegfynsgvp.functions.supabase.co/chat-with-ai`, {
         method: 'POST',
@@ -115,6 +121,7 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      console.log('Response received, starting to read stream...');
       const reader = response.body?.getReader();
       if (!reader) {
         throw new Error('No response body reader available');
@@ -125,7 +132,10 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
       try {
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            console.log('Stream reading completed');
+            break;
+          }
 
           const chunk = new TextDecoder().decode(value);
           const lines = chunk.split('\n');
@@ -136,17 +146,19 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
               if (data) {
                 try {
                   const parsed = JSON.parse(data);
+                  console.log('Parsed streaming data:', parsed.type);
+                  
                   if (parsed.type === 'content') {
                     fullResponse += parsed.content;
                     setStreamingMessage(fullResponse);
                   } else if (parsed.type === 'done') {
-                    // Streaming finished
+                    console.log('Received done signal');
                     break;
                   } else if (parsed.type === 'error') {
                     throw new Error(parsed.error);
                   }
                 } catch (e) {
-                  // Skip invalid JSON
+                  console.log('Skipping invalid JSON:', data.substring(0, 50));
                 }
               }
             }
@@ -158,12 +170,14 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
 
       // Add AI response to database
       if (fullResponse) {
+        console.log('Adding AI response to database...');
         await addMessage(chatId, 'assistant', fullResponse, selectedModel);
       }
 
       // Generate and update chat title for new chats
       if (isNewChat) {
         try {
+          console.log('Generating chat title...');
           const title = await generateChatTitle(userMessage);
           await updateChat(chatId, { title });
         } catch (titleError) {
@@ -171,7 +185,7 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
         }
       }
 
-      toast.success('Message sent successfully');
+      console.log('Message processing completed successfully');
 
     } catch (error: any) {
       if (error.name === 'AbortError') {

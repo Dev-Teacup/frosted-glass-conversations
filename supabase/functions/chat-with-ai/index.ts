@@ -77,15 +77,22 @@ serve(async (req) => {
         async start(controller) {
           const reader = response.body?.getReader();
           if (!reader) {
+            console.error('No reader available for streaming response');
+            controller.enqueue(`data: ${JSON.stringify({ type: 'error', error: 'No reader available' })}\n\n`);
             controller.close();
             return;
           }
 
           try {
             let buffer = '';
+            console.log('Starting to read streaming response...');
+            
             while (true) {
               const { done, value } = await reader.read();
-              if (done) break;
+              if (done) {
+                console.log('Stream reading completed');
+                break;
+              }
 
               buffer += new TextDecoder().decode(value);
               const lines = buffer.split('\n');
@@ -95,31 +102,50 @@ serve(async (req) => {
                 if (line.startsWith('data: ')) {
                   const data = line.slice(6).trim();
                   if (data === '[DONE]') {
-                    controller.enqueue(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
-                    controller.close();
+                    console.log('Received [DONE] signal, ending stream');
+                    try {
+                      controller.enqueue(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+                    } catch (e) {
+                      console.log('Controller already closed, ignoring done signal');
+                    }
                     return;
                   }
                   
                   try {
                     const parsed = JSON.parse(data);
                     if (parsed.choices?.[0]?.delta?.content) {
-                      controller.enqueue(`data: ${JSON.stringify({ 
-                        type: 'content',
-                        content: parsed.choices[0].delta.content,
-                        model: model || 'openai/gpt-3.5-turbo'
-                      })}\n\n`);
+                      const content = parsed.choices[0].delta.content;
+                      console.log('Streaming content chunk:', content.length, 'chars');
+                      try {
+                        controller.enqueue(`data: ${JSON.stringify({ 
+                          type: 'content',
+                          content: content,
+                          model: model || 'openai/gpt-3.5-turbo'
+                        })}\n\n`);
+                      } catch (e) {
+                        console.log('Controller closed, stopping stream');
+                        return;
+                      }
                     }
                   } catch (e) {
-                    // Skip invalid JSON lines
+                    console.log('Skipping invalid JSON line:', data.substring(0, 100));
                   }
                 }
               }
             }
           } catch (error) {
             console.error('Streaming error:', error);
-            controller.enqueue(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
+            try {
+              controller.enqueue(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
+            } catch (e) {
+              console.log('Controller already closed, cannot send error');
+            }
           } finally {
-            controller.close();
+            try {
+              controller.close();
+            } catch (e) {
+              console.log('Controller already closed');
+            }
           }
         }
       });
