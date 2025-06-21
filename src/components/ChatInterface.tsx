@@ -122,12 +122,15 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
       }
 
       console.log('Response received, starting to read stream...');
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('No response body reader available');
+      
+      if (!response.body) {
+        throw new Error('No response body available');
       }
 
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
       let fullResponse = '';
+      let buffer = '';
       
       try {
         while (true) {
@@ -137,12 +140,21 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
             break;
           }
 
-          const chunk = new TextDecoder().decode(value);
-          const lines = chunk.split('\n');
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          
+          // Keep the last incomplete line in the buffer
+          buffer = lines.pop() || '';
 
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               const data = line.slice(6).trim();
+              
+              if (data === '[DONE]') {
+                console.log('Received [DONE] signal, ending stream');
+                break;
+              }
+              
               if (data) {
                 try {
                   const parsed = JSON.parse(data);
