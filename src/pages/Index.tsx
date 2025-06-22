@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
+import { Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import ChatInterface from '@/components/ChatInterface';
 import Sidebar from '@/components/Sidebar';
 import AuthPage from '@/components/AuthPage';
@@ -50,6 +52,15 @@ const Index = () => {
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 sm:w-96 sm:h-96 bg-pink-500/10 rounded-full blur-3xl floating-animation" style={{ animationDelay: '2s' }}></div>
         <div className="absolute top-3/4 left-1/2 w-48 h-48 sm:w-64 sm:h-64 bg-blue-500/10 rounded-full blur-3xl floating-animation" style={{ animationDelay: '4s' }}></div>
       </div>
+
+      {/* Mobile Sidebar Toggle Button */}
+      <Button
+        onClick={toggleSidebar}
+        className="fixed top-4 left-4 z-50 lg:hidden glass-panel bg-white/10 hover:bg-white/20 border-white/20"
+        size="icon"
+      >
+        <Menu className="w-5 h-5" />
+      </Button>
 
       {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
