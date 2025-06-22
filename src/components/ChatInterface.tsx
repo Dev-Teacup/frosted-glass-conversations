@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Settings, Moon, Sun, Menu } from 'lucide-react';
+import { Send, Bot, User, Settings, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,7 +30,6 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
   const [selectedModel, setSelectedModel] = useState('openai/gpt-3.5-turbo');
   const [isTyping, setIsTyping] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -174,15 +173,6 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
       {/* Header */}
       <div className="glass-panel mx-2 sm:mx-4 mt-2 sm:mt-4 p-3 sm:p-4 flex items-center justify-between">
         <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
-          {/* Mobile sidebar toggle */}
-          <Button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden glass-input bg-white/10 hover:bg-white/20 border-white/20 p-2"
-            size="icon"
-          >
-            <Menu className="w-4 h-4" />
-          </Button>
-          
           <div className="flex items-center space-x-2 min-w-0">
             <Bot className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400 flex-shrink-0" />
             <h1 className="text-lg sm:text-xl font-semibold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent truncate">

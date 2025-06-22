@@ -19,6 +19,10 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const handleNewChat = async () => {
     if (!user) return;
     await createChat();
+    // Close sidebar on mobile after creating new chat
+    if (window.innerWidth < 1024) {
+      onToggle();
+    }
   };
 
   const handleDeleteChat = async (id: string) => {
@@ -34,19 +38,14 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
 
   const handleChatClick = (chatId: string) => {
     setCurrentChatId(chatId);
+    // Close sidebar on mobile after selecting a chat
+    if (window.innerWidth < 1024) {
+      onToggle();
+    }
   };
 
   return (
     <>
-      {/* Mobile Toggle Button */}
-      <Button
-        onClick={onToggle}
-        className="fixed top-4 left-4 z-50 lg:hidden glass-panel bg-white/10 hover:bg-white/20 border-white/20"
-        size="icon"
-      >
-        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </Button>
-
       {/* Backdrop */}
       {isOpen && (
         <div 
@@ -67,14 +66,25 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
             <h2 className="text-lg font-semibold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               Chat History
             </h2>
-            <Button
-              onClick={handleNewChat}
-              className="glass-input hover:bg-white/10 border-white/20"
-              size="sm"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button
+                onClick={handleNewChat}
+                className="glass-input hover:bg-white/10 border-white/20"
+                size="sm"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New
+              </Button>
+              {/* Mobile close button */}
+              <Button
+                onClick={onToggle}
+                className="lg:hidden glass-input hover:bg-white/10 border-white/20"
+                size="sm"
+                variant="ghost"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
 
           {/* Chat List */}
@@ -94,7 +104,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                         <input
                           type="text"
                           defaultValue={chat.title}
-                          className="w-full bg-transparent border-none outline-none text-sm font-medium"
+                          className="w-full bg-transparent border-none outline-none text-sm font-medium text-white"
                           autoFocus
                           onBlur={(e) => handleRenameChat(chat.id, e.target.value)}
                           onKeyPress={(e) => {
@@ -105,7 +115,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                           onClick={(e) => e.stopPropagation()}
                         />
                       ) : (
-                        <h3 className="text-sm font-medium truncate">
+                        <h3 className="text-sm font-medium truncate text-white">
                           {chat.title}
                         </h3>
                       )}
