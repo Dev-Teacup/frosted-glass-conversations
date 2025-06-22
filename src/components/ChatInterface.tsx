@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Settings, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -170,12 +169,12 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
 
   return (
     <div className="flex flex-col h-screen bg-transparent">
-      {/* Header */}
-      <div className="glass-panel mx-2 sm:mx-4 mt-2 sm:mt-4 p-3 sm:p-4 flex items-center justify-between">
+      {/* Header - Optimized for mobile */}
+      <div className="glass-panel mx-2 mt-2 p-2 sm:mx-4 sm:mt-4 sm:p-4 flex items-center justify-between">
         <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
           <div className="flex items-center space-x-2 min-w-0">
-            <Bot className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400 flex-shrink-0" />
-            <h1 className="text-lg sm:text-xl font-semibold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent truncate">
+            <Bot className="w-4 h-4 sm:w-6 sm:h-6 text-purple-400 flex-shrink-0" />
+            <h1 className="text-sm sm:text-xl font-semibold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent truncate">
               AI Chat Assistant
             </h1>
           </div>
@@ -200,14 +199,14 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
           </div>
         </div>
         
-        <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+        <div className="flex items-center space-x-1 flex-shrink-0">
           <Button
             variant="ghost"
             size="icon"
             onClick={onToggleTheme}
             className="glass-input hover:bg-white/10 w-8 h-8 sm:w-10 sm:h-10"
           >
-            {isDarkMode ? <Sun className="w-4 h-4 sm:w-5 sm:h-5" /> : <Moon className="w-4 h-4 sm:w-5 sm:h-5" />}
+            {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </Button>
           <Button 
             variant="ghost" 
@@ -215,13 +214,13 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
             className="glass-input hover:bg-white/10 w-8 h-8 sm:w-10 sm:h-10"
             onClick={() => setShowSettings(true)}
           >
-            <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
+            <Settings className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
-      {/* Model selector for mobile */}
-      <div className="sm:hidden mx-2 mb-2">
+      {/* Model selector for mobile - Reduced margin */}
+      <div className="sm:hidden mx-2 mb-1">
         <Select value={selectedModel} onValueChange={setSelectedModel}>
           <SelectTrigger className="w-full glass-input border-white/20 text-sm">
             <SelectValue />
@@ -239,15 +238,15 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
         </Select>
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 mx-2 sm:mx-4 mb-2 sm:mb-4">
-        <ScrollArea className="h-full glass-panel p-3 sm:p-6">
+      {/* Messages Area - Optimized spacing */}
+      <div className="flex-1 mx-2 mb-1 sm:mx-4 sm:mb-2">
+        <ScrollArea className="h-full glass-panel p-2 sm:p-6">
           {loading && messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
             </div>
           ) : (
-            <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-3 sm:space-y-6">
               {displayMessages.length === 0 && !currentChatId && (
                 <div className="text-center text-muted-foreground py-8 sm:py-12">
                   <Bot className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 opacity-50" />
@@ -278,10 +277,10 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
                     )}
                   </div>
                   
-                  <div className={`max-w-[85%] sm:max-w-3xl p-3 sm:p-4 ${
+                  <div className={`max-w-[85%] sm:max-w-3xl p-2 sm:p-4 ${
                     message.isUser ? 'message-bubble-user' : 'message-bubble-ai'
                   }`}>
-                    <div className="text-xs sm:text-sm leading-relaxed">
+                    <div className="text-sm leading-relaxed">
                       {message.isUser ? (
                         <span className="whitespace-pre-wrap">{message.content}</span>
                       ) : (
@@ -307,7 +306,7 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
                   <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-500 to-cyan-500">
                     <Bot className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                   </div>
-                  <div className="message-bubble-ai p-3 sm:p-4 max-w-[85%] sm:max-w-3xl">
+                  <div className="message-bubble-ai p-2 sm:p-4 max-w-[85%] sm:max-w-3xl">
                     <div className="flex space-x-1">
                       <div className="w-2 h-2 bg-gray-400 rounded-full typing-indicator"></div>
                       <div className="w-2 h-2 bg-gray-400 rounded-full typing-indicator" style={{ animationDelay: '0.2s' }}></div>
@@ -322,10 +321,10 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
         </ScrollArea>
       </div>
 
-      {/* Input Area */}
-      <div className="mx-2 sm:mx-4 mb-4 sm:mb-6">
-        <div className="glass-panel p-3 sm:p-4 neon-glow">
-          <div className="flex items-end space-x-2 sm:space-x-4">
+      {/* Input Area - Properly aligned and symmetrical */}
+      <div className="mx-2 mb-2 sm:mx-4 sm:mb-6">
+        <div className="glass-panel p-2 sm:p-4 neon-glow">
+          <div className="flex items-center space-x-2">
             <div className="flex-1">
               <textarea
                 ref={inputRef}
@@ -333,21 +332,17 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Type your message here..."
-                className="w-full glass-input resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 placeholder-gray-400 text-sm sm:text-base"
+                className="w-full glass-input resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 placeholder-gray-400 text-sm min-h-[44px] max-h-[120px] leading-tight py-3"
                 rows={1}
-                style={{
-                  minHeight: '40px',
-                  maxHeight: '120px',
-                }}
                 disabled={isTyping}
               />
             </div>
             <Button
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isTyping}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 flex-shrink-0"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-[44px] w-[44px] rounded-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 flex-shrink-0 p-0"
             >
-              <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Send className="w-4 h-4" />
             </Button>
           </div>
         </div>

@@ -72,7 +72,7 @@
   }
   
   .glass-input {
-    @apply backdrop-blur-xl bg-white/5 border border-white/20 rounded-xl px-4 py-3;
+    @apply backdrop-blur-xl bg-white/5 border border-white/20 rounded-xl px-3 py-2;
     box-shadow: inset 0 2px 4px 0 rgba(31, 38, 135, 0.2);
   }
   
@@ -142,7 +142,7 @@
       @apply rounded-xl;
     }
     
-    /* Ensure proper touch targets */
+    /* Ensure proper touch targets and alignment */
     button {
       min-height: 44px;
       min-width: 44px;
@@ -152,12 +152,81 @@
     body {
       overflow-x: hidden;
     }
+    
+    /* Improved mobile spacing */
+    .space-y-3 > * + * {
+      margin-top: 0.75rem;
+    }
+    
+    /* Better mobile text input */
+    textarea {
+      -webkit-appearance: none;
+      border-radius: 0.75rem;
+    }
+    
+    /* Consistent mobile margins */
+    .mx-2 {
+      margin-left: 0.5rem;
+      margin-right: 0.5rem;
+    }
+    
+    .mb-1 {
+      margin-bottom: 0.25rem;
+    }
+    
+    .mb-2 {
+      margin-bottom: 0.5rem;
+    }
+    
+    .mt-2 {
+      margin-top: 0.5rem;
+    }
+    
+    .p-2 {
+      padding: 0.5rem;
+    }
   }
 
   /* Improved responsive text sizing */
   @media (max-width: 480px) {
     .glass-input {
       @apply text-base; /* Prevent zoom on iOS */
+    }
+    
+    /* Ensure mobile viewport fits */
+    html, body, #root {
+      height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    /* Better mobile spacing for small screens */
+    .space-x-2 > * + * {
+      margin-left: 0.5rem;
+    }
+    
+    /* Optimize input area for mobile */
+    .flex.items-center.space-x-2 {
+      gap: 0.5rem;
+    }
+    
+    /* Consistent button sizing */
+    .h-\[44px\] {
+      height: 44px;
+    }
+    
+    .w-\[44px\] {
+      width: 44px;
+    }
+  }
+  
+  /* Better touch targets for all mobile devices */
+  @media (hover: none) and (pointer: coarse) {
+    button, 
+    [role="button"], 
+    input[type="button"], 
+    input[type="submit"] {
+      min-height: 44px;
+      min-width: 44px;
     }
   }
 }
