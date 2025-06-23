@@ -33,7 +33,7 @@ const Index = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
       </div>
     );
   }
@@ -46,17 +46,18 @@ const Index = () => {
   // Show main app if user is logged in
   return (
     <div className="min-h-screen flex w-full relative overflow-hidden">
-      {/* Animated Background Elements */}
+      {/* Improved Animated Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 sm:w-96 sm:h-96 bg-purple-500/10 rounded-full blur-3xl floating-animation"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 sm:w-96 sm:h-96 bg-pink-500/10 rounded-full blur-3xl floating-animation" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute top-3/4 left-1/2 w-48 h-48 sm:w-64 sm:h-64 bg-blue-500/10 rounded-full blur-3xl floating-animation" style={{ animationDelay: '4s' }}></div>
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 sm:w-96 sm:h-96 bg-blue-400/8 rounded-full blur-3xl floating-animation"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-72 h-72 sm:w-96 sm:h-96 bg-cyan-400/8 rounded-full blur-3xl floating-animation" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-3/4 left-1/2 w-56 h-56 sm:w-80 sm:h-80 bg-indigo-400/8 rounded-full blur-3xl floating-animation" style={{ animationDelay: '4s' }}></div>
+        <div className="absolute top-1/2 right-1/3 w-48 h-48 sm:w-64 sm:h-64 bg-teal-400/6 rounded-full blur-3xl floating-animation" style={{ animationDelay: '6s' }}></div>
       </div>
 
-      {/* Mobile Sidebar Toggle Button - Fixed position */}
+      {/* Mobile Sidebar Toggle Button - Better positioned */}
       <Button
         onClick={toggleSidebar}
-        className="fixed top-2 left-2 z-50 lg:hidden glass-panel bg-white/10 hover:bg-white/20 border-white/20"
+        className="fixed top-4 left-4 z-50 lg:hidden glass-panel bg-white/8 hover:bg-white/12 border-white/15 backdrop-blur-md"
         size="icon"
       >
         <Menu className="w-5 h-5" />
@@ -65,7 +66,7 @@ const Index = () => {
       {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
       
-      {/* Main Content - Full screen on mobile */}
+      {/* Main Content */}
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'lg:ml-80' : 'lg:ml-80'} mobile-main-content`}>
         <ChatInterface isDarkMode={isDarkMode} onToggleTheme={toggleTheme} />
       </div>

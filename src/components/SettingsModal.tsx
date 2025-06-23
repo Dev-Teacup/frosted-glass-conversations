@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Palette, Bot, LogOut } from 'lucide-react';
+import { User, Palette, Bot, LogOut } = 'lucide-react';
 import { toast } from 'sonner';
 
 interface Profile {
@@ -20,9 +19,18 @@ interface SettingsModalProps {
   onClose: () => void;
   isDarkMode: boolean;
   onToggleTheme: () => void;
+  selectedModel: string;
+  onModelChange: (model: string) => void;
 }
 
-export default function SettingsModal({ isOpen, onClose, isDarkMode, onToggleTheme }: SettingsModalProps) {
+const AI_MODELS = [
+  { value: 'openai/gpt-3.5-turbo', label: 'GPT-3.5 Turbo', description: 'Fast and efficient' },
+  { value: 'openai/gpt-4o', label: 'GPT-4o', description: 'Most capable' },
+  { value: 'deepseek/deepseek-chat', label: 'DeepSeek Chat', description: 'Alternative AI model' },
+  { value: 'anthropic/claude-3-sonnet-20240229', label: 'Claude 3 Sonnet', description: 'High-quality responses' }
+];
+
+export default function SettingsModal({ isOpen, onClose, isDarkMode, onToggleTheme, selectedModel, onModelChange }: SettingsModalProps) {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [fullName, setFullName] = useState('');
@@ -87,12 +95,17 @@ export default function SettingsModal({ isOpen, onClose, isDarkMode, onToggleThe
     toast.success('Signed out successfully');
   };
 
+  const handleModelChange = (model: string) => {
+    setPreferredModel(model);
+    onModelChange(model);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="glass-panel border-white/20 max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Settings
+          <DialogTitle className="text-xl font-semibold bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent">
+            FlowChat Settings
           </DialogTitle>
         </DialogHeader>
 
@@ -100,7 +113,7 @@ export default function SettingsModal({ isOpen, onClose, isDarkMode, onToggleThe
           {/* Profile Section */}
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <User className="w-5 h-5 text-purple-400" />
+              <User className="w-5 h-5 text-blue-400" />
               <h3 className="font-medium">Profile</h3>
             </div>
             <div>
@@ -127,19 +140,24 @@ export default function SettingsModal({ isOpen, onClose, isDarkMode, onToggleThe
           {/* AI Preferences */}
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <Bot className="w-5 h-5 text-purple-400" />
-              <h3 className="font-medium">AI Preferences</h3>
+              <Bot className="w-5 h-5 text-blue-400" />
+              <h3 className="font-medium">AI Model</h3>
             </div>
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Preferred Model</label>
-              <Select value={preferredModel} onValueChange={setPreferredModel}>
+              <label className="block text-sm text-muted-foreground mb-1">Select AI Model</label>
+              <Select value={selectedModel} onValueChange={handleModelChange}>
                 <SelectTrigger className="glass-input border-white/20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="glass-panel border-white/20">
-                  <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
-                  <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                  <SelectItem value="deepseek-chat">DeepSeek Chat</SelectItem>
+                  {AI_MODELS.map((model) => (
+                    <SelectItem key={model.value} value={model.value}>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-sm">{model.label}</span>
+                        <span className="text-xs text-muted-foreground">{model.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -148,7 +166,7 @@ export default function SettingsModal({ isOpen, onClose, isDarkMode, onToggleThe
           {/* Theme Section */}
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <Palette className="w-5 h-5 text-purple-400" />
+              <Palette className="w-5 h-5 text-blue-400" />
               <h3 className="font-medium">Appearance</h3>
             </div>
             <div className="flex items-center justify-between">
@@ -169,7 +187,7 @@ export default function SettingsModal({ isOpen, onClose, isDarkMode, onToggleThe
             <Button
               onClick={saveProfile}
               disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
             >
               {loading ? 'Saving...' : 'Save Settings'}
             </Button>
