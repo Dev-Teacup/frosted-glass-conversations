@@ -168,9 +168,9 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
   }));
 
   return (
-    <div className="flex flex-col h-screen bg-transparent overflow-hidden">
-      {/* Header - Fixed height */}
-      <div className="glass-panel mx-2 mt-1 p-2 sm:mx-3 sm:mt-2 sm:p-3 flex items-center justify-between flex-shrink-0">
+    <div className="fixed inset-0 flex flex-col bg-transparent overflow-hidden">
+      {/* Header - Fixed at top */}
+      <div className="mobile-header glass-panel mx-2 mt-1 p-2 sm:mx-3 sm:mt-2 sm:p-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
           <div className="flex items-center space-x-2 min-w-0">
             <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 flex-shrink-0" />
@@ -219,8 +219,8 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
         </div>
       </div>
 
-      {/* Model selector for mobile - Fixed height */}
-      <div className="sm:hidden mx-2 mb-1 flex-shrink-0">
+      {/* Model selector for mobile - Fixed below header */}
+      <div className="mobile-model-selector sm:hidden mx-2 mb-1 flex-shrink-0">
         <Select value={selectedModel} onValueChange={setSelectedModel}>
           <SelectTrigger className="w-full glass-input border-white/20 text-sm">
             <SelectValue />
@@ -238,8 +238,8 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
         </Select>
       </div>
 
-      {/* Messages Area - Flexible height with internal scrolling */}
-      <div className="flex-1 mx-2 min-h-0 sm:mx-3">
+      {/* Messages Area - Flexible height with scrolling */}
+      <div className="flex-1 mx-2 min-h-0 sm:mx-3 pb-2">
         <div className="glass-panel h-full flex flex-col">
           <ScrollArea className="flex-1 p-2 sm:p-4">
             {loading && messages.length === 0 ? (
@@ -278,12 +278,12 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
                       )}
                     </div>
                     
-                    <div className={`max-w-[85%] sm:max-w-3xl p-2 sm:p-3 ${
+                    <div className={`mobile-message-bubble max-w-[85%] sm:max-w-3xl p-2 sm:p-3 ${
                       message.isUser ? 'message-bubble-user' : 'message-bubble-ai'
                     }`}>
-                      <div className="text-sm leading-relaxed">
+                      <div className="text-sm leading-relaxed mobile-message-content">
                         {message.isUser ? (
-                          <span className="whitespace-pre-wrap">{message.content}</span>
+                          <span className="whitespace-pre-wrap break-words">{message.content}</span>
                         ) : (
                           <MessageRenderer content={message.content} isDarkMode={isDarkMode} />
                         )}
@@ -324,9 +324,9 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
       </div>
 
       {/* Input Area - Fixed at bottom */}
-      <div className="mx-2 mb-2 mt-1 sm:mx-3 sm:mb-3 sm:mt-2 flex-shrink-0">
+      <div className="mobile-input-area mx-2 mb-2 sm:mx-3 sm:mb-3 flex-shrink-0">
         <div className="glass-panel p-2 sm:p-3 neon-glow">
-          <div className="flex items-end space-x-2">
+          <div className="flex items-center space-x-2">
             <div className="flex-1">
               <textarea
                 ref={inputRef}
@@ -334,7 +334,7 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Type your message here..."
-                className="w-full glass-input resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 placeholder-gray-400 text-sm min-h-[40px] max-h-[120px] leading-tight py-2 px-3"
+                className="mobile-textarea w-full glass-input resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 placeholder-gray-400 text-sm min-h-[44px] max-h-[120px] leading-tight py-3 px-3"
                 rows={1}
                 disabled={isTyping}
               />
@@ -342,7 +342,7 @@ export default function ChatInterface({ isDarkMode, onToggleTheme }: ChatInterfa
             <Button
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isTyping}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-[40px] w-[40px] rounded-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 flex-shrink-0 p-0"
+              className="mobile-send-button bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-[44px] w-[44px] rounded-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 flex-shrink-0 p-0"
             >
               <Send className="w-4 h-4" />
             </Button>

@@ -57,6 +57,13 @@
   .light body {
     @apply bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50;
   }
+  
+  /* Full height mobile optimization */
+  html, body, #root {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+    overflow: hidden;
+  }
 }
 
 /* Glassmorphism Effects */
@@ -127,14 +134,82 @@
     to { opacity: 1; transform: translateX(0); }
   }
 
-  /* Mobile-specific improvements */
+  /* Mobile-specific optimizations */
   @media (max-width: 640px) {
+    /* Full screen mobile layout */
+    .mobile-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      margin: 0.5rem;
+      padding: 0.75rem;
+      border-radius: 1rem;
+    }
+    
+    .mobile-model-selector {
+      position: fixed;
+      top: 4rem;
+      left: 0;
+      right: 0;
+      z-index: 40;
+      margin: 0.5rem;
+      padding-top: 0.5rem;
+    }
+    
+    .mobile-input-area {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      margin: 0.5rem;
+      padding: 0;
+    }
+    
+    /* Message bubbles with proper text wrapping */
+    .mobile-message-bubble {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      hyphens: auto;
+      max-width: calc(100vw - 4rem);
+    }
+    
+    .mobile-message-content {
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+    
+    /* Textarea and send button alignment */
+    .mobile-textarea {
+      font-size: 16px; /* Prevent zoom on iOS */
+      line-height: 1.4;
+      padding: 0.75rem;
+      border-radius: 0.75rem;
+    }
+    
+    .mobile-send-button {
+      min-height: 44px;
+      min-width: 44px;
+      border-radius: 0.75rem;
+    }
+    
+    /* Ensure proper spacing for fixed elements */
+    body > div[id="root"] > div {
+      padding-top: 6rem; /* Space for header + model selector */
+      padding-bottom: 6rem; /* Space for input area */
+    }
+    
+    /* Glass panels on mobile */
     .glass-panel {
       @apply rounded-xl;
+      backdrop-filter: blur(16px);
     }
     
     .glass-input {
       @apply px-3 py-2 rounded-lg;
+      backdrop-filter: blur(16px);
     }
     
     .message-bubble-user,
@@ -142,91 +217,109 @@
       @apply rounded-xl;
     }
     
-    /* Ensure proper touch targets and alignment */
+    /* Better touch targets */
     button {
       min-height: 44px;
       min-width: 44px;
     }
     
-    /* Prevent horizontal scroll on mobile */
+    /* Prevent horizontal scroll */
     body {
       overflow-x: hidden;
     }
     
-    /* Improved mobile spacing */
-    .space-y-3 > * + * {
-      margin-top: 0.75rem;
+    /* Code blocks and long text wrapping */
+    pre, code {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      max-width: 100%;
     }
     
-    /* Better mobile text input */
-    textarea {
-      -webkit-appearance: none;
-      border-radius: 0.75rem;
-    }
-    
-    /* Consistent mobile margins */
-    .mx-2 {
-      margin-left: 0.5rem;
-      margin-right: 0.5rem;
-    }
-    
-    .mb-1 {
-      margin-bottom: 0.25rem;
-    }
-    
-    .mb-2 {
-      margin-bottom: 0.5rem;
-    }
-    
-    .mt-2 {
-      margin-top: 0.5rem;
-    }
-    
-    .p-2 {
-      padding: 0.5rem;
+    /* Ensure messages don't exceed container width */
+    .message-bubble-user,
+    .message-bubble-ai {
+      max-width: calc(85vw - 2rem);
     }
   }
 
-  /* Improved responsive text sizing */
+  /* Extra small mobile devices */
   @media (max-width: 480px) {
-    .glass-input {
-      @apply text-base; /* Prevent zoom on iOS */
+    .mobile-header {
+      padding: 0.5rem;
+      margin: 0.25rem;
     }
     
-    /* Ensure mobile viewport fits */
-    html, body, #root {
-      height: 100vh;
-      overflow-x: hidden;
+    .mobile-model-selector {
+      top: 3.5rem;
+      margin: 0.25rem;
     }
     
-    /* Better mobile spacing for small screens */
+    .mobile-input-area {
+      margin: 0.25rem;
+    }
+    
+    /* Tighter spacing for very small screens */
     .space-x-2 > * + * {
-      margin-left: 0.5rem;
+      margin-left: 0.375rem;
     }
     
-    /* Optimize input area for mobile */
-    .flex.items-center.space-x-2 {
-      gap: 0.5rem;
+    .space-y-3 > * + * {
+      margin-top: 0.5rem;
     }
     
-    /* Consistent button sizing */
-    .h-\[44px\] {
-      height: 44px;
+    /* Smaller message bubbles */
+    .mobile-message-bubble {
+      max-width: calc(90vw - 1.5rem);
+      padding: 0.5rem;
     }
     
-    .w-\[44px\] {
-      width: 44px;
+    /* Adjust for smaller header */
+    body > div[id="root"] > div {
+      padding-top: 5rem;
+      padding-bottom: 5.5rem;
+    }
+  }
+
+  /* Landscape mobile optimization */
+  @media (max-width: 768px) and (orientation: landscape) {
+    .mobile-header {
+      padding: 0.5rem;
+    }
+    
+    .mobile-model-selector {
+      display: none; /* Hide on landscape to save space */
+    }
+    
+    body > div[id="root"] > div {
+      padding-top: 4rem; /* Less top padding in landscape */
     }
   }
   
-  /* Better touch targets for all mobile devices */
+  /* Ensure touch targets are accessible */
   @media (hover: none) and (pointer: coarse) {
     button, 
     [role="button"], 
     input[type="button"], 
-    input[type="submit"] {
+    input[type="submit"],
+    textarea {
       min-height: 44px;
-      min-width: 44px;
+    }
+    
+    /* Better touch experience */
+    button:active {
+      transform: scale(0.95);
+    }
+  }
+  
+  /* Safe area handling for notched devices */
+  @media (max-width: 640px) {
+    .mobile-header {
+      padding-top: max(0.75rem, env(safe-area-inset-top, 0.75rem));
+    }
+    
+    .mobile-input-area {
+      padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0.5rem));
     }
   }
 }

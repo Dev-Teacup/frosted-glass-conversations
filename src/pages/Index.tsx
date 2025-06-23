@@ -53,10 +53,10 @@ const Index = () => {
         <div className="absolute top-3/4 left-1/2 w-48 h-48 sm:w-64 sm:h-64 bg-blue-500/10 rounded-full blur-3xl floating-animation" style={{ animationDelay: '4s' }}></div>
       </div>
 
-      {/* Mobile Sidebar Toggle Button */}
+      {/* Mobile Sidebar Toggle Button - Fixed position */}
       <Button
         onClick={toggleSidebar}
-        className="fixed top-4 left-4 z-50 lg:hidden glass-panel bg-white/10 hover:bg-white/20 border-white/20"
+        className="fixed top-2 left-2 z-50 lg:hidden glass-panel bg-white/10 hover:bg-white/20 border-white/20"
         size="icon"
       >
         <Menu className="w-5 h-5" />
@@ -65,8 +65,8 @@ const Index = () => {
       {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
       
-      {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'lg:ml-80' : 'lg:ml-80'}`}>
+      {/* Main Content - Full screen on mobile */}
+      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'lg:ml-80' : 'lg:ml-80'} mobile-main-content`}>
         <ChatInterface isDarkMode={isDarkMode} onToggleTheme={toggleTheme} />
       </div>
     </div>
